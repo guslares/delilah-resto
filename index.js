@@ -23,8 +23,8 @@ server.use((req, res, next) => {
             console.log(token)
             const token_user = jwt.verify(token[1], JWT_SECRET);
             if (!!token_user) {
-                  req.user = token_user;
-                //   console.log(token_user)
+                req.user = token_user;
+
                 return next();
             }
         } catch (e) {
@@ -56,8 +56,8 @@ server.post('/register', async (req, res) => {
 
     try {
 
-        const validUsername = await findDataUsers('users', 'username', req.body.username)
-        const validMail = await findDataUsers('users', 'email', req.body.email)
+        const validUsername = await findData('users', 'username', req.body.username)
+        const validMail = await findData('users', 'email', req.body.email)
 
         if (!!validUsername || !!validMail) {
             res.statusCode = 409
@@ -189,36 +189,57 @@ server.delete('/products/:id', isAdmin, (req, res) => {
         })
 });
 
-
-//=========================================================
+//=======================================================
 //======================== ORDENES ======================
-//=========================================================
+//=======================================================
 // crear, listar, cambiar estado,  
 
 //===================== Crear orden (pedido) ===================
 
-server.post('/order', (req, res) => {
-try {
-    const params = req
-    console.log(req.body.productos[0] , req.body.productos.length())
-    // buscar id usario con el token 
-    // enviar pedido como pendiente
-    // calcular el total del pedido
+server.post('/order', async (req, res) => {
+    try {
+        const params = req
 
-    res.statusCode = 200
-    res.json({ text: 'Pedido recibido' })
-    
-} catch (error) {
-    console.log(error)
-    res.sendStatus = 500
-    res.json({text: `Hubo un error inesperado, intente nuevamente`, er:error })
-}
+        const productids = req.body.productos.map(idProd => idProd[0])
+        const productQty = req.body.productos.map(qty => qty[1])
+        let productsDetail = await Promise.all(productids.map(prodId => findData('products', 'product_id', prodId)))
+
+        const orderData = () =>{ 
+            let total = 0
+            let description 
+            productsDetail.forEach( (product,index ) =>{
+            total += product.precio * req.body.productos[index]
+        })
+                  
+        
+        return total
+        };
+        // let resumen = productsDetail.forEach((product,index)=>{
+        //     if(product.description.split(' '))
+
+
+        // });
+     
+        console.log(totalPago);
+        console.log(productsDetail);
+
+        // calcular el total del pedido 
+        // enviar pedido como pendiente
+
+        res.statusCode = 200
+        res.json({ text: 'Pedido recibido' })
+
+    } catch (error) {
+        console.log(error)
+        res.sendStatus = 500
+        res.json({ text: `Hubo un error inesperado, intente nuevamente`, er: error })
+    }
 });
 
 //=========================================================
 //================== Funciones auxiliares =================
 
-async function findDataUsers(where, what, param) {
+async function findData(where, what, param) {
     const all = false
     const searchResults = await sql.query(`SELECT * FROM ${where} WHERE ${what} = ? `,
         { replacements: [param], type: sequelize.QueryTypes.SELECT })
@@ -227,7 +248,8 @@ async function findDataUsers(where, what, param) {
 
 function signToken(data) {
     delete data.password
-    return jwt.sign(data, JWT_SECRET, { expiresIn: '30m' })
+    // return jwt.sign(data, JWT_SECRET, { expiresIn: '30m' })
+    return jwt.sign(data, JWT_SECRET)
 };
 
 server.listen(process.env.PORT || 3000, () => {
