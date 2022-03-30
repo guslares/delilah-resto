@@ -4,7 +4,7 @@ const sequelize = require('sequelize')
 const bodyParser = require('body-parser');
 const sql = new sequelize('mysql://root@localhost:3306/delilahresto')
 const jwt = require('jsonwebtoken');
-const { SequelizeScopeError } = require('sequelize');
+const { SequelizeScopeError, SMALLINT } = require('sequelize');
 
 const JWT_SECRET = process.env.JWT_SECRET || "f1rm4$ecre7@D3lD3lilaH-R3stó"
 
@@ -135,7 +135,7 @@ server.get('/products', async (req, res) => {
 
 server.post('/products', isAdmin, (req, res) => {
 
-    sql.query('INSERT into products (product_id, nombre, description, precio) VALUES (?,?,?,?)',
+    sql.query('INSERT INTO products (product_id, nombre, description, precio) VALUES (?,?,?,?)',
         { replacements: [null, req.body.nombre, req.body.description, req.body.precio] })
         .then(sqlRes => {
             console.log(`El producto ha sido creado con éxito: ${sqlRes}`);
@@ -198,36 +198,41 @@ server.delete('/products/:id', isAdmin, (req, res) => {
 
 server.post('/order', async (req, res) => {
     try {
-        const params = req
-
         const productids = req.body.productos.map(idProd => idProd[0])
         const productQty = req.body.productos.map(qty => qty[1])
-        let productsDetail = await Promise.all(productids.map(prodId => findData('products', 'product_id', prodId)))
-
-        const orderData = () =>{ 
+        // let productsDetail = await Promise.all(productids.map(prodId => findData('products', 'product_id', prodId)))
+        let productsDetail = await sql.query('SELECT * FROM ')
+        const orderData = async () => {
             let total = 0
-            let description 
-            productsDetail.forEach( (product,index ) =>{
-            total += product.precio * req.body.productos[index]
-        })
-                  
-        
-        return total
+            let description = ""
+            productsDetail.forEach((product, index) => {
+                total += product.precio * productQty[index]
+                let main_words = product.nombre.match(/[a-zA-Z]{4,}/g);
+                main_words = main_words.map(word => {
+                    return word.slice(0, 3);
+                })
+                const product_short = String().concat('', ...main_words);
+                
+                description += `${productQty[index]}x${product_short} `
+           })
+            return [total, description]
         };
-        // let resumen = productsDetail.forEach((product,index)=>{
-        //     if(product.description.split(' '))
+
+        const [total, description] = await orderData()
 
 
-        // });
+        const order = await sql.query('INSERT into orders (order_id , user_id, status, total, payment_method, date, description) VALUES (?,?,?,?,?,?,?)',
+        { replacements: [null,req.user.user_id,'NUEVO',total,req.body.paymenth_method,new Date(),description]})
+        .then(sqlRes=>{
+            
+            req.body.productos.forEach( (product)=>{
+                sql.query('INSERT INTO order_products (order_product_id, order_id, product_id, product_amount) VALUES (?,?,?,?)',
+                {replacements: [null,sqlRes[0],product[0],product[1]] })
+             })
+        })
      
-        console.log(totalPago);
-        console.log(productsDetail);
-
-        // calcular el total del pedido 
-        // enviar pedido como pendiente
-
         res.statusCode = 200
-        res.json({ text: 'Pedido recibido' })
+        res.json({ text: `Pedido recibido, número de orden ${order[0]}` })
 
     } catch (error) {
         console.log(error)
@@ -236,8 +241,24 @@ server.post('/order', async (req, res) => {
     }
 });
 
+server.get('/order', async (req, res) =>{
+
+    const productids = await req.body.productos.map(idProd => idProd[0])
+sql.query('SELECT * FROM products WHERE product_id IN (:order_id) ', 
+{replacements: {order_id : productids}})
+.then(sqlRes => console.log(sqlRes[0]))
+
+res.statusCode = 200
+res.json({text: 'ok'})
+});
+
+
+//===================== Crear orden (pedido) ===================
+
 //=========================================================
 //================== Funciones auxiliares =================
+
+
 
 async function findData(where, what, param) {
     const all = false
