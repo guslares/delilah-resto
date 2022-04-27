@@ -20,7 +20,7 @@ server.use((req, res, next) => {
     else {
         try {
             const token = req.headers.authorization.split(" ");
-            console.log(token)
+            // console.log(token)
             const token_user = jwt.verify(token[1], JWT_SECRET);
             if (!!token_user) {
                 req.user = token_user;
@@ -91,8 +91,6 @@ server.post('/register', async (req, res) => {
 //=================== Login de usuarios ===================
 
 server.get('/login', async (req, res) => {
-    // console.log(req)
-
     await sql.query('SELECT * FROM users WHERE (username = ? OR email= ? AND password = ?)',
         {
             replacements: [req.body.param, req.body.param, req.body.password],
@@ -192,29 +190,34 @@ server.delete('/products/:id', isAdmin, (req, res) => {
 //=======================================================
 //======================== ORDENES ======================
 //=======================================================
-// crear, listar, cambiar estado,  
+// crear ok / listar  admin y user ok/ cambiar estado / Eliminar  
 
-//===================== Crear orden (pedido) ===================
+//===================== Crear pedidos ===================
 
 server.post('/order', async (req, res) => {
     try {
-        const productids = req.body.productos.map(idProd => idProd[0])
-        const productQty = req.body.productos.map(qty => qty[1])
-        // let productsDetail = await Promise.all(productids.map(prodId => findData('products', 'product_id', prodId)))
-        let productsDetail = await sql.query('SELECT * FROM ')
+        const productids = await req.body.productos.map(idProd => idProd[0])
+        const productQty = await req.body.productos.map(qty => qty[1])
+
+        let productsDetail = await sql.query('SELECT * FROM products WHERE product_id IN (:order_id) ',
+            {
+                replacements: { order_id: productids }
+            })
+
         const orderData = async () => {
             let total = 0
             let description = ""
-            productsDetail.forEach((product, index) => {
+
+            productsDetail[0].forEach((product, index) => {
                 total += product.precio * productQty[index]
                 let main_words = product.nombre.match(/[a-zA-Z]{4,}/g);
                 main_words = main_words.map(word => {
                     return word.slice(0, 3);
                 })
                 const product_short = String().concat('', ...main_words);
-                
+
                 description += `${productQty[index]}x${product_short} `
-           })
+            })
             return [total, description]
         };
 
@@ -222,17 +225,15 @@ server.post('/order', async (req, res) => {
 
 
         const order = await sql.query('INSERT into orders (order_id , user_id, status, total, payment_method, date, description) VALUES (?,?,?,?,?,?,?)',
-        { replacements: [null,req.user.user_id,'NUEVO',total,req.body.paymenth_method,new Date(),description]})
-        .then(sqlRes=>{
-            
-            req.body.productos.forEach( (product)=>{
-                sql.query('INSERT INTO order_products (order_product_id, order_id, product_id, product_amount) VALUES (?,?,?,?)',
-                {replacements: [null,sqlRes[0],product[0],product[1]] })
-             })
+            { replacements: [null, req.user.user_id, 'NUEVO', total, req.body.paymenth_method, new Date(), description] })
+
+        req.body.productos.forEach(async (product) => {
+            await sql.query('INSERT INTO order_products (order_product_id, order_id, product_id, product_amount) VALUES (?,?,?,?)',
+                { replacements: [null, order[0], product[0], product[1]] })
         })
-     
+
         res.statusCode = 200
-        res.json({ text: `Pedido recibido, número de orden ${order[0]}` })
+        res.json({ text: `Pedido recibido, el número de orden es ${order[0]}` })
 
     } catch (error) {
         console.log(error)
@@ -241,25 +242,43 @@ server.post('/order', async (req, res) => {
     }
 });
 
-server.get('/order', async (req, res) =>{
+//===================== Listar pedidos ===================
+// usuarios los propios y admin todos
+server.get('/orders', async (req, res) => {
 
-    const productids = await req.body.productos.map(idProd => idProd[0])
-sql.query('SELECT * FROM products WHERE product_id IN (:order_id) ', 
-{replacements: {order_id : productids}})
-.then(sqlRes => console.log(sqlRes[0]))
+    try {
+        if (!!req.user.is_admin) {
+            await sql.query(`SELECT orders.*, users.username FROM orders 
+                JOIN users ON orders.user_id`,
+                { type: sequelize.QueryTypes.SELECT })
+                .then(sqlRes => {
+                    res.statusCode = 200
+                    res.json({ data: sqlRes })
+                })
+        }
+        else {
+            await sql.query(`SELECT * FROM orders WHERE user_id = ${req.user.user_id}`,
+                { type: sequelize.QueryTypes.SELECT })
+                .then(sqlRes => {
+                    res.statusCode = 200
+                    res.json({ data: sqlRes })
+                })
+        }}
+         catch (error) {
+            res.statusCode = 404
+            res.json({ er: error
+            })
+        }
+    
+    console.log(req.user.is_admin)
 
-res.statusCode = 200
-res.json({text: 'ok'})
-});
+})
 
 
-//===================== Crear orden (pedido) ===================
-
+//===================== Ver pedido por ID ================
+server.get('/order',async( req,res)=>{})
 //=========================================================
 //================== Funciones auxiliares =================
-
-
-
 async function findData(where, what, param) {
     const all = false
     const searchResults = await sql.query(`SELECT * FROM ${where} WHERE ${what} = ? `,
