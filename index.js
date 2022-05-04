@@ -263,20 +263,41 @@ server.get('/orders', async (req, res) => {
                     res.statusCode = 200
                     res.json({ data: sqlRes })
                 })
-        }}
-         catch (error) {
-            res.statusCode = 404
-            res.json({ er: error
-            })
         }
-    
+    }
+    catch (error) {
+        res.statusCode = 404
+        res.json({
+            er: error
+        })
+    }
+
     console.log(req.user.is_admin)
 
 })
-
-
 //===================== Ver pedido por ID ================
-server.get('/order',async( req,res)=>{})
+server.get('/order/:id', async (req, res) => {
+    //validar si es admin 
+    const orderId = req.params.id
+    console.log(req.user)
+
+    try {
+        await sql.query(`SELECT * FROM orders WHERE order_id = ? AND user_id = ? `,
+            { replacements: [orderId, req.user.user_id] ,type: sequelize.QueryTypes.SELECT })
+            .then(sqlRes =>{  
+                res.statusCode = 200
+                res.json(sqlRes[0])
+                
+            })
+
+    } catch (error) {
+
+
+
+    }
+   
+
+})
 //=========================================================
 //================== Funciones auxiliares =================
 async function findData(where, what, param) {
