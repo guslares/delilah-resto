@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const sql = new sequelize('mysql://root@localhost:3306/delilahresto')
 const jwt = require('jsonwebtoken');
 const { SequelizeScopeError, SMALLINT } = require('sequelize');
+const text = require('body-parser/lib/types/text');
 
 const JWT_SECRET = process.env.JWT_SECRET || "f1rm4$ecre7@D3lD3lilaH-R3stó"
 
@@ -248,7 +249,7 @@ server.get('/orders', async (req, res) => {
 
     try {
         if (!!req.user.is_admin) {
-            await sql.query(`SELECT orders.*, users.username FROM orders 
+            await sql.query(`SELECT orders.*, users.username , users.domicilio FROM orders 
                 JOIN users ON orders.user_id`,
                 { type: sequelize.QueryTypes.SELECT })
                 .then(sqlRes => {
@@ -279,19 +280,44 @@ server.get('/orders', async (req, res) => {
 server.get('/order/:id', async (req, res) => {
     //validar si es admin 
     const orderId = req.params.id
-    console.log(req.user)
-
+  
     try {
-        await sql.query(`SELECT * FROM orders WHERE order_id = ? AND user_id = ? `,
-            { replacements: [orderId, req.user.user_id] ,type: sequelize.QueryTypes.SELECT })
+        if (!!req.user.is_admin) {
+        await sql.query(`SELECT orders.*, users.phone, users.domicilio, users.email FROM orders LEFT JOIN users ON orders.user_id = users.user_id WHERE orders.order_id = ?`,
+            {replacements:[orderId],type: sequelize.QueryTypes.SELECT })
             .then(sqlRes =>{  
+                if(!!sqlRes.length){
+                
                 res.statusCode = 200
                 res.json(sqlRes[0])
-                
+                } 
+                else{
+                    res.statusCode = 404
+                    res.json({text : `La orden no existe`})
+                }
+              
             })
+
+
+
+            
+            }
+            else{
+                await sql.query(`SELECT * FROM orders WHERE order_id = ? AND user_id = ? `,
+                { replacements: [orderId, req.user.user_id] ,type: sequelize.QueryTypes.SELECT })
+                .then(sqlRes =>{  
+                    console.log(sqlRes)
+                    res.statusCode = 200
+                    res.json(sqlRes[0])
+                  
+                })
+            }
 
     } catch (error) {
 
+
+        res.statusCode = 500
+        res.json({text: error})
 
 
     }
