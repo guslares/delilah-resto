@@ -4,7 +4,7 @@ const sequelize = require('sequelize')
 const bodyParser = require('body-parser');
 const sql = new sequelize('mysql://root@localhost:3306/delilahresto')
 const jwt = require('jsonwebtoken');
-const { SequelizeScopeError, SMALLINT } = require('sequelize');
+//const { SequelizeScopeError, SMALLINT } = require('sequelize');
 const text = require('body-parser/lib/types/text');
 
 const JWT_SECRET = process.env.JWT_SECRET || "f1rm4$ecre7@D3lD3lilaH-R3stó"
@@ -31,7 +31,7 @@ server.use((req, res, next) => {
         } catch (e) {
             console.error(e.message);
             res.statusCode = 401;
-            res.json({ error: "Su token no es válido, por favor inicie sesión nuevamente para continuar" });
+            res.json({ error: `Su token no es válido, por favor inicie sesión nuevamente para continuar` });
         }
     }
 });
@@ -46,7 +46,7 @@ const isAdmin = (req, res, next) => {
     }
     else {
         res.statusCode = 403;
-        res.json({ error: "No tiene permisos para realizar esta operación" });
+        res.json({ error: `No tiene permisos para realizar esta operación` });
     }
 
 };
@@ -62,7 +62,7 @@ server.post('/register', async (req, res) => {
 
         if (!!validUsername || !!validMail) {
             res.statusCode = 409
-            res.send({ err: 'Usuario existente o correo existente' })
+            res.send({ err: `Usuario existente o correo existente` })
         }
         else {
 
@@ -70,20 +70,20 @@ server.post('/register', async (req, res) => {
                 { replacements: [null, req.body.nombre, req.body.apellido, req.body.username, req.body.domicilio, req.body.password, req.body.email, req.body.phone, 0, 0] })
                 .then(sqlRes => {
                     console.log(`El usuario ha sido creado con éxito: ID = ${JSON.stringify(...sqlRes)}`);
-                    res.send({ Estdo: 'Usuario creado' })
+                    res.send({ Estado: `Usuario creado` })
                 })
 
                 .catch(e => {
                     console.log(e.message)
                     res.statusCode = 500
-                    res.send({ err: 'Hubo un error' })
+                    res.send({ err: `Hubo un error` })
                 })
         }
     }
     catch (error) {
         console.log(error);
         res.statusCode = 500
-        res.send({ err: 'Hubo un error' })
+        res.send({ err: `Hubo un error` })
     }
 
 });
@@ -105,7 +105,7 @@ server.get('/login', async (req, res) => {
         })
         .catch(e => {
             res.statusCode = 409
-            res.send({ err: 'Usuario existente o correo existente' })
+            res.send({ err: `Usuario existente o correo existente` })
         })
 });
 
@@ -120,8 +120,8 @@ server.get('/products', async (req, res) => {
     await sql.query('SELECT * FROM products', { type: sequelize.QueryTypes.SELECT })
         .then(products => {
             if (products.length === 0) {
-                console.log('No hay productos en Delilah Restó');
-                res.json({ text: 'No hay productos en Delilah Restó`', products: [] })
+                console.log(`No hay productos en Delilah Restó`);
+                res.json({ text: `No hay productos en Delilah Restó`, products: [] })
             }
             else {
                 console.log(`Estos son los productos de Delilah Restó: ${JSON.stringify(products)}`);
@@ -139,10 +139,9 @@ server.post('/products', isAdmin, (req, res) => {
         .then(sqlRes => {
             console.log(`El producto ha sido creado con éxito: ${sqlRes}`);
             res.statusCode = 201;
-            res.json({ text: 'El producto se creó correctamente' });
+            res.json({ text: `El producto se creó correctamente` });
         })
         .catch(err => {
-
             res.statusCode = 400;
             console.error(`${err.message}\nEl producto no pudo ser creado, verifique la información e intente nuevamente`);
             res.json({ error: 'El producto no pudo ser creado, verifique la información e intente nuevamente' });
@@ -161,9 +160,8 @@ server.put('/products/:id', isAdmin, (req, res) => {
             res.json({ text: `El producto ha sido modificado con éxito: ${sqlRes}` });
         })
         .catch(err => {
-
             res.statusCode = 400;
-            res.json({ error: 'El producto no pudo ser modificado, verifique la información e intente nuevamente' });
+            res.json({ error: `El producto no pudo ser modificado, verifique la información e intente nuevamente` });
             throw (`${err.message}\nEl producto no pudo ser modificado, verifique la información e intente nuevamente`);
         })
 });
@@ -173,7 +171,7 @@ server.put('/products/:id', isAdmin, (req, res) => {
 server.delete('/products/:id', isAdmin, (req, res) => {
     const product_id = req.params.id;
 
-    sql.query('DELETE FROM products WHERE product_id = ?',
+    sql.query(`DELETE FROM products WHERE product_id = ?`,
         { replacements: [product_id] })
         .then(sqlRes => {
             console.log(`El producto ha sido eliminado con éxito: ${sqlRes}`);
@@ -181,9 +179,8 @@ server.delete('/products/:id', isAdmin, (req, res) => {
             res.json({ text: 'El producto se eleminó' });
         })
         .catch(err => {
-
             res.statusCode = 400;
-            res.json({ error: 'El producto no pudo ser modificado, verifique la información e intente nuevamente' });
+            res.json({ error: `El producto no pudo ser modificado, verifique la información e intente nuevamente` });
             throw (`${err.message}\nEl producto no pudo ser modificado, verifique la información e intente nuevamente`);
         })
 });
@@ -191,7 +188,7 @@ server.delete('/products/:id', isAdmin, (req, res) => {
 //=======================================================
 //======================== ORDENES ======================
 //=======================================================
-// crear ok / listar  admin y user ok/ cambiar estado / Eliminar  
+// crear ok / listar  admin y user ok/ buscar por id/cambiar estado / Eliminar  
 
 //===================== Crear pedidos ===================
 
@@ -200,7 +197,7 @@ server.post('/order', async (req, res) => {
         const productids = await req.body.productos.map(idProd => idProd[0])
         const productQty = await req.body.productos.map(qty => qty[1])
 
-        let productsDetail = await sql.query('SELECT * FROM products WHERE product_id IN (:order_id) ',
+        let productsDetail = await sql.query(`SELECT * FROM products WHERE product_id IN (:order_id)`,
             {
                 replacements: { order_id: productids }
             })
@@ -225,11 +222,11 @@ server.post('/order', async (req, res) => {
         const [total, description] = await orderData()
 
 
-        const order = await sql.query('INSERT into orders (order_id , user_id, status, total, payment_method, date, description) VALUES (?,?,?,?,?,?,?)',
+        const order = await sql.query(`INSERT into orders (order_id , user_id, status, total, payment_method, date, description) VALUES (?,?,?,?,?,?,?)`,
             { replacements: [null, req.user.user_id, 'NUEVO', total, req.body.paymenth_method, new Date(), description] })
 
         req.body.productos.forEach(async (product) => {
-            await sql.query('INSERT INTO order_products (order_product_id, order_id, product_id, product_amount) VALUES (?,?,?,?)',
+            await sql.query(`INSERT INTO order_products (order_product_id, order_id, product_id, product_amount) VALUES (?,?,?,?)`,
                 { replacements: [null, order[0], product[0], product[1]] })
         })
 
@@ -272,58 +269,102 @@ server.get('/orders', async (req, res) => {
             er: error
         })
     }
-
-    console.log(req.user.is_admin)
-
+  
 })
 //===================== Ver pedido por ID ================
 server.get('/order/:id', async (req, res) => {
     //validar si es admin 
     const orderId = req.params.id
-  
+
     try {
         if (!!req.user.is_admin) {
-        await sql.query(`SELECT orders.*, users.phone, users.domicilio, users.email FROM orders LEFT JOIN users ON orders.user_id = users.user_id WHERE orders.order_id = ?`,
-            {replacements:[orderId],type: sequelize.QueryTypes.SELECT })
-            .then(sqlRes =>{  
-                if(!!sqlRes.length){
-                
-                res.statusCode = 200
-                res.json(sqlRes[0])
-                } 
-                else{
-                    res.statusCode = 404
-                    res.json({text : `La orden no existe`})
-                }
-              
-            })
+            await sql.query(`SELECT orders.*, users.phone, users.domicilio, users.email FROM orders LEFT JOIN users ON orders.user_id = users.user_id WHERE orders.order_id = ?`,
+                { replacements: [orderId], type: sequelize.QueryTypes.SELECT })
+                .then(async sqlRes => {
+                    if (!!sqlRes.length) {
+                        sqlRes[0].products = await sql.query(`SELECT order_products.order_id , order_products.product_amount , products.precio , products.nombre FROM order_products  LEFT JOIN products ON order_products.product_id = products.product_id WHERE order_id = ?`,
+                            { replacements: [orderId], type: sequelize.QueryTypes.SELECT })
+                        res.statusCode = 200
+                        res.json(sqlRes[0])
+                    }
+                    else {
+                        res.statusCode = 404
+                        res.json({ text: `La orden no existe` })
+                    }
 
-
-
-            
-            }
-            else{
-                await sql.query(`SELECT * FROM orders WHERE order_id = ? AND user_id = ? `,
-                { replacements: [orderId, req.user.user_id] ,type: sequelize.QueryTypes.SELECT })
-                .then(sqlRes =>{  
-                    console.log(sqlRes)
-                    res.statusCode = 200
-                    res.json(sqlRes[0])
-                  
                 })
-            }
+        }
+        else {
+            await sql.query(`SELECT * FROM orders WHERE order_id = ? AND user_id = ? `,
+                { replacements: [orderId, req.user.user_id], type: sequelize.QueryTypes.SELECT })
+                .then(async sqlRes => {
+                    console.log(sqlRes)
+
+                    if (!!sqlRes.length) {
+
+                        sqlRes[0].products = await sql.query(`SELECT order_products.order_id , order_products.product_amount , products.precio , products.nombre FROM order_products  LEFT JOIN products ON order_products.product_id = products.product_id WHERE order_id = ?`,
+                            { replacements: [orderId], type: sequelize.QueryTypes.SELECT })
+                        res.statusCode = 200
+                        res.json(sqlRes[0])
+                    } 
+                    else{
+                        res.statusCode = 404
+                        res.json({ text: `No se encontraron datos` })
+                    }
+                })
+        }
 
     } catch (error) {
-
-
         res.statusCode = 500
-        res.json({text: error})
-
-
+        res.json({ text: `Hubo un error, detalle ${error}`})
     }
-   
+})
+//================ Cambiar estado de pedido ===============
+
+server.put('/order/:id',isAdmin,async (req,res)=>{
+  const orderId = req.params.id
+  const newStatus = req.body.newStatus
+    try {
+       await sql.query(`UPDATE orders SET status = ? WHERE order_id =?`, 
+        {replacements: [  newStatus ,orderId]})
+        .then(sqlRes =>{
+            console.log(sqlRes)
+            res.statusCode = 200
+            res.json({text: `esto es una prueba`})
+        })
+
+    } catch (error) {
+        res.statusCode = 400
+        res.json({text: `Hubo un error, detalle ${error}`})
+    }
 
 })
+//================ Eliminar un pedido ===============
+
+server.delete('/order/:id',isAdmin,async (req,res)=>{
+    const orderId = req.params.id
+      try {
+          await sql.query(`DELETE FROM orders WHERE order_id =?`, 
+          {replacements: [ orderId]})
+          .then(sqlRes =>{
+              //affectedRows
+              console.log(sqlRes)
+              if(!!sqlRes[0].affectedRows){
+              res.statusCode = 200
+              res.json({text: `La orden fue eliminada con éxito`})
+            }
+            else {
+                res.statusCode = 400
+                res.json({text: `El pedido no existe`})
+            }
+          })
+  
+      } catch (error) {
+          res.statusCode = 400
+          res.json({text: `Hubo un error, detalle ${error}`})
+      }
+  
+  })
 //=========================================================
 //================== Funciones auxiliares =================
 async function findData(where, what, param) {
@@ -340,5 +381,5 @@ function signToken(data) {
 };
 
 server.listen(process.env.PORT || 3000, () => {
-    console.log('Bienvenido a la API de Delilah Restó');
+    console.log(`Bienvenido a la API de Delilah Restó`);
 });
