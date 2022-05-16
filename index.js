@@ -16,7 +16,7 @@ server.use(bodyParser.json());
 server.use((req, res, next) => {
 
     console.log(`${req.method} - ${req.path} - ${JSON.stringify(req.query)} - ${JSON.stringify(req.body)}`)
-    if (req.path === '/login' || req.path === '/register' || req.path === '/')
+    if (req.path === '/user/login' || req.path === '/user' || req.path === '/')
         next();
     else {
         try {
@@ -50,10 +50,12 @@ const isAdmin = (req, res, next) => {
     }
 
 };
-
+//=========================================================
+//======================== USUARIOS ======================
+//=========================================================
 //================= Registro de usuarios ==================
 
-server.post('/register', async (req, res) => {
+server.post('/user', async (req, res) => {
 
     try {
 
@@ -70,6 +72,7 @@ server.post('/register', async (req, res) => {
                 { replacements: [null, req.body.nombre, req.body.apellido, req.body.username, req.body.domicilio, req.body.password, req.body.email, req.body.phone, 0, 0] })
                 .then(sqlRes => {
                     console.log(`El usuario ha sido creado con éxito: ID = ${JSON.stringify(...sqlRes)}`);
+                    res.statusCode= 201
                     res.send({ Estado: `Usuario creado` })
                 })
 
@@ -89,9 +92,9 @@ server.post('/register', async (req, res) => {
 });
 
 
-//=================== Login de usuarios ===================
+//================== Login de usuarios ===================
 
-server.get('/login', async (req, res) => {
+server.get('/user/login', async (req, res) => {
     await sql.query('SELECT * FROM users WHERE (username = ? OR email= ? AND password = ?)',
         {
             replacements: [req.body.param, req.body.param, req.body.password],
@@ -110,11 +113,11 @@ server.get('/login', async (req, res) => {
 });
 
 
-//=========================================================
-//======================== PRODUCTOS ======================
-//=========================================================
+//========================================================
+//======================= PRODUCTOS ======================
+//========================================================
 
-//=================== Obtener productos ===================
+//================== Obtener productos ===================
 server.get('/products', async (req, res) => {
 
     await sql.query('SELECT * FROM products', { type: sequelize.QueryTypes.SELECT })
@@ -148,9 +151,9 @@ server.post('/products', isAdmin, (req, res) => {
         })
 });
 
-//===================== Modificar producto ==================
+//==================== Modificar producto ================
 
-server.put('/products/:id', isAdmin, (req, res) => {
+server.put('/product/:id', isAdmin, (req, res) => {
     const product_id = req.params.id
     sql.query(`UPDATE products SET nombre = ? , description = ? , precio = ? WHERE product_id = ${product_id}`,
         { replacements: [req.body.nombre, req.body.description, req.body.precio] })
@@ -166,9 +169,9 @@ server.put('/products/:id', isAdmin, (req, res) => {
         })
 });
 
-//===================== Eliminar producto ===================
+//==================== Eliminar producto =================
 
-server.delete('/products/:id', isAdmin, (req, res) => {
+server.delete('/product/:id', isAdmin, (req, res) => {
     const product_id = req.params.id;
 
     sql.query(`DELETE FROM products WHERE product_id = ?`,
