@@ -124,6 +124,7 @@ server.get('/products', async (req, res) => {
         .then(products => {
             if (products.length === 0) {
                 console.log(`No hay productos en Delilah Restó`);
+                res.statusCode = 404
                 res.json({ text: `No hay productos en Delilah Restó`, products: [] })
             }
             else {
@@ -153,7 +154,7 @@ server.post('/products', isAdmin, (req, res) => {
 
 //==================== Modificar producto ================
 
-server.put('/product/:id', isAdmin, (req, res) => {
+server.put('/products/:id', isAdmin, (req, res) => {
     const product_id = req.params.id
     sql.query(`UPDATE products SET nombre = ? , description = ? , precio = ? WHERE product_id = ${product_id}`,
         { replacements: [req.body.nombre, req.body.description, req.body.precio] })
@@ -171,7 +172,7 @@ server.put('/product/:id', isAdmin, (req, res) => {
 
 //==================== Eliminar producto =================
 
-server.delete('/product/:id', isAdmin, (req, res) => {
+server.delete('/products/:id', isAdmin, (req, res) => {
     const product_id = req.params.id;
 
     sql.query(`DELETE FROM products WHERE product_id = ?`,
@@ -191,11 +192,11 @@ server.delete('/product/:id', isAdmin, (req, res) => {
 //=======================================================
 //======================== ORDENES ======================
 //=======================================================
-// crear ok / listar  admin y user ok/ buscar por id/cambiar estado / Eliminar  
+
 
 //===================== Crear pedidos ===================
 
-server.post('/order', async (req, res) => {
+server.post('/orders', async (req, res) => {
     try {
         const productids = await req.body.productos.map(idProd => idProd[0])
         const productQty = await req.body.productos.map(qty => qty[1])
@@ -275,7 +276,7 @@ server.get('/orders', async (req, res) => {
   
 })
 //===================== Ver pedido por ID ================
-server.get('/order/:id', async (req, res) => {
+server.get('/orders/:id', async (req, res) => {
     //validar si es admin 
     const orderId = req.params.id
 
@@ -324,7 +325,7 @@ server.get('/order/:id', async (req, res) => {
 })
 //================ Cambiar estado de pedido ===============
 
-server.put('/order/:id',isAdmin,async (req,res)=>{
+server.put('/orders/:id',isAdmin,async (req,res)=>{
   const orderId = req.params.id
   const newStatus = req.body.newStatus
     try {
@@ -344,7 +345,7 @@ server.put('/order/:id',isAdmin,async (req,res)=>{
 })
 //================ Eliminar un pedido ===============
 
-server.delete('/order/:id',isAdmin,async (req,res)=>{
+server.delete('/orders/:id',isAdmin,async (req,res)=>{
     const orderId = req.params.id
       try {
           await sql.query(`DELETE FROM orders WHERE order_id =?`, 

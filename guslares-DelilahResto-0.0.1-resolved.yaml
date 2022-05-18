@@ -1,0 +1,223 @@
+openapi: 3.0.0
+info:
+  version: "0.0.1"
+  title: Delilah Resto Api
+  description: Food Delivery backend API
+  contact:
+    email: guslares@gmail.com
+externalDocs:
+  description: GitHub Repository
+  url: 'https://github.com/guslares/delilah-resto'
+servers: 
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/guslares/DelilahResto/0.0.1
+  - url: http://localhost:3000/
+tags: 
+  - name: user
+    description: Users managment
+  - name: products
+    description: Everything about products
+  - name: orders
+    description: Everything about orders
+
+paths:
+  /user:
+    post:
+      tags:
+        - user
+      summary: Create user
+      description: This can only be done by an unlogged user and the email or username can't be register yet
+      operationId: createUser
+      responses:
+       '201':
+          description: successful operation
+       '409':
+          description: Username or email already exits
+       '500':
+          description: Internal error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        description: Created user
+        required: true
+        
+  /user/login:
+    get:
+      tags:
+        - user
+      summary: Logs user into the system
+      operationId: loginUser
+      parameters:
+        - name: username
+          in: query
+          description: The user name for login
+          required: true
+          schema: 
+            type: string
+        - name: password
+          in: query
+          description: The password for login in clear text
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+        '409':
+          description: invalid email, username or password
+          
+  /products:
+    post:
+      tags:
+        - products
+      summary: Add new product only Admin
+      operationId: createProduct
+      responses:
+        '201':
+          description: successful operation
+        '400':
+          description: invalid data
+      security:
+        - token: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+        description: products data
+        required: true
+    get:
+      tags:
+        - products
+      summary: Get all products in the menu
+      operationId: getProducts
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref : '#/components/schemas/Product'
+        '404':
+          description: without products
+      security:
+        - token: []
+
+  /products/{productId}:
+    put:
+      tags:
+        - products
+      summary: Edits product by Id (only Admin)
+      description: Edits a specific product fetching it by it's ID
+      operationId: editProduct
+      parameters:
+        - name: productId
+          in: path
+          description: Id of product to edit
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+       description: Modification data
+       required: true
+       content:
+         application/json:
+           schema:
+            $ref: "#/components/schemas/Product"
+      responses:
+        '201':
+          description: successful operation
+        '400':
+          description: invalid data
+      security:
+       - token: []
+    delete:
+      tags:
+        - products
+      summary: Edits product by Id (only Admin)
+      description: Delete an specific product fetching it by it's ID
+      operationId: deleteProduct
+      parameters:
+        - name: productId
+          in: path
+          description: Id of product to deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '201':
+          description: successful operation
+        '400':
+          description: invalid data
+      security:
+       - token: []
+    
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - nombre
+        - apellido
+        - username
+        - domicilio
+        - password
+        - email
+        - phone
+      properties:
+        user_id: 
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        apellido:
+          type: string
+        username:
+          type: string
+        domicilio:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        id_admin:
+          type: boolean
+        is_disabled:
+          type: boolean
+          
+    Product:
+      type: object
+      required:
+        - nombre
+        - description
+        - precio
+      properties:
+        product_id:
+          type: integer
+          format: int64          
+        nombre:
+          type: string
+        description:
+          type: string
+        precio:
+          type: integer
+          format: int64
+          
+  securitySchemes:
+    token:
+      type: apiKey
+      name: token
+      in: header
