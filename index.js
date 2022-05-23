@@ -195,11 +195,11 @@ server.delete('/products/:id', isAdmin, (req, res) => {
 
 
 //===================== Crear pedidos ===================
-
 server.post('/orders', async (req, res) => {
     try {
-        const productids = await req.body.productos.map(idProd => idProd[0])
-        const productQty = await req.body.productos.map(qty => qty[1])
+      
+        const productids = await req.body.productos.map(producto => producto.product_id)
+        const productQty = await req.body.productos.map(producto => producto.qty)
 
         let productsDetail = await sql.query(`SELECT * FROM products WHERE product_id IN (:order_id)`,
             {
@@ -231,21 +231,19 @@ server.post('/orders', async (req, res) => {
 
         req.body.productos.forEach(async (product) => {
             await sql.query(`INSERT INTO order_products (order_product_id, order_id, product_id, product_amount) VALUES (?,?,?,?)`,
-                { replacements: [null, order[0], product[0], product[1]] })
+                { replacements: [null, order[0], product.product_id , product.qty] })
         })
-
+       
         res.statusCode = 200
         res.json({ text: `Pedido recibido, el número de orden es ${order[0]}` })
 
     } catch (error) {
         console.log(error)
-        res.sendStatus = 500
+        res.sendStatus = 400
         res.json({ text: `Hubo un error inesperado, intente nuevamente`, er: error })
     }
 });
-
 //===================== Listar pedidos ===================
-// usuarios los propios y admin todos
 server.get('/orders', async (req, res) => {
 
     try {
@@ -324,13 +322,12 @@ server.get('/orders/:id', async (req, res) => {
     }
 })
 //================ Cambiar estado de pedido ===============
-
 server.put('/orders/:id',isAdmin,async (req,res)=>{
   const orderId = req.params.id
   const newStatus = req.body.newStatus
     try {
        await sql.query(`UPDATE orders SET status = ? WHERE order_id =?`, 
-        {replacements: [  newStatus ,orderId]})
+        {replacements: [newStatus ,orderId]})
         .then(sqlRes =>{
             console.log(sqlRes)
             res.statusCode = 200
