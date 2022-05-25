@@ -36,7 +36,7 @@ npm install
 
 ### 4 - Iniciando el servidor
 
-Abrir el archivo en `/server/index.js` desde node
+Abrir el archivo en `index.js` desde node
 
 `node server`
 
