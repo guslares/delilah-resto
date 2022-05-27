@@ -4,8 +4,6 @@ const sequelize = require('sequelize')
 const bodyParser = require('body-parser');
 const sql = new sequelize('mysql://root@localhost:3306/delilahresto')
 const jwt = require('jsonwebtoken');
-//const { SequelizeScopeError, SMALLINT } = require('sequelize');
-const text = require('body-parser/lib/types/text');
 
 const JWT_SECRET = process.env.JWT_SECRET || "f1rm4$ecre7@D3lD3lilaH-R3stó"
 

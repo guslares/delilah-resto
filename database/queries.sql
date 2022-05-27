@@ -121,3 +121,69 @@ VALUES(
   "Muzarella y aceitunas",
   650
 )
+
+INSERT INTO
+orders
+VALUES(
+26,
+"2020-05-15 16:04:50",
+5,
+"NUEVO",
+2300,
+Tarjeta,
+"1xHamSim 1xHamEsp 2xPiz"
+)
+
+INSERT INTO
+orders
+VALUES(
+27,
+2022-05-27 18:32:25,
+5,
+"PREPARANDO",
+1700,
+"Tarjeta",
+"1xHamSim 2xHamEsp",
+)
+
+INSERT INTO
+order_products
+VALUES(
+1,
+26,
+1,
+1
+)
+
+INSERT INTO
+order_products
+VALUES(
+  2,
+26,
+2,
+1)
+
+INSERT INTO
+order_products
+VALUES(
+3,
+26,
+3,
+2)
+
+INSERT INTO
+order_products
+VALUES(
+ 4,
+27,
+1,
+1)
+
+
+INSERT INTO
+order_products
+VALUES(
+5,
+27,
+2,
+2)
